@@ -1,79 +1,100 @@
 # ClaimClarity
 
-**Turns a health plan's remittance file (EDI 835) into a plain-English report of why claims were paid less, adjusted or denied.**
+**A plain-English view of why health-plan claims were paid, adjusted or denied.**
+ClaimClarity reads a payer remittance file (EDI 835) and turns its numeric reason codes into readable explanations, a reason mix and a month-by-month denial trend. It reports on decisions already made. It does not make, question or advise on them.
 
-**[Open the live demo →](https://apoorvab11.github.io/ClaimClarity/)** · No install or sign-in · Runs entirely in your browser
+![ClaimClarity dashboard](docs/screenshots/desktop.png)
 
----
+> **Status:** portfolio prototype built on synthetic data. It is not validated for real claims operations. See [Known limits](#known-limits).
+
+- **Live demo:** [apoorvab11.github.io/ClaimClarity](https://apoorvab11.github.io/ClaimClarity/) (no install or sign-in)
+- **Business requirements:** [docs/BRD.md](docs/BRD.md) · **Functional requirements:** [docs/FRD.md](docs/FRD.md)
+- **Independent review and what I changed:** [docs/CHANGELOG.md](docs/CHANGELOG.md)
 
 ## The problem
 
-When a health plan pays or rejects a medical claim, it sends the provider a remittance file (an "835") full of numeric codes. A line such as `CAS*CO*197*2000` means the claim was cut by $2,000 because a required pre-approval was missing, but nothing on the page says so.
+When a health plan pays or rejects a claim, it sends the provider a remittance file full of codes such as `CAS*CO*197*2000`. That one line means the claim was adjusted by 2,000 because a required authorization was missing, but nothing on the page says so. Analysts look codes up one at a time, group them differently from report to report, and rebuild trend views by hand. Patterns like "authorization problems are rising every month" stay buried.
 
-Analysts, managers and operations teams who need to know *why* claims are being rejected end up looking codes up one at a time, or waiting for someone technical to summarise the file. Patterns like "authorisation problems are rising every month" stay hidden inside thousands of lines.
+## Who it is for
 
-ClaimClarity turns that file into a picture a non-technical person can read in a minute.
-
-## Who it's for
-
-| User | Their question | What ClaimClarity gives them |
-| --- | --- | --- |
-| Claims operations analyst | "Why was this claim paid less than billed?" | The reason in plain English beside the official X12 wording, one click from the claim |
-| Claims operations manager | "Are rejections rising, and for what reason?" | Monthly denial rate, reason mix and a short written summary |
-| Provider relations team | "What evidence can I bring to a provider conversation?" | Filter by payer or reason, then export the list as CSV |
-| Data / BI analyst | "I need one consistent way to group reasons." | A reusable code-to-category mapping and CSV export |
-| Compliance reviewer | "Does this tool make coverage decisions?" | A clear on-screen statement that it only reports |
+| User | Question they are trying to answer |
+| --- | --- |
+| Claims operations analyst (primary) | Why was this claim paid less than billed? |
+| Claims operations manager | Are rejections rising, and for what reason? |
+| Provider relations team | What evidence can I bring to a provider conversation? |
+| Data or BI analyst | Can I reuse one consistent way to group reasons? |
 
 ## What it does
 
-- Reads a standard 835 file in the browser (nothing is uploaded), or uses 600 built-in synthetic claims
-- Translates 14 verified reason and remark codes (CARC/RARC) into plain English, next to the official X12 wording
-- Groups every claim into one of five reason categories, with an "Other / Unmapped" bucket so nothing is silently dropped
-- Shows claim count, billed and paid amounts, denial rate, average days to remit, and a month-by-month trend
-- Lets you search, filter by status, category or payer, open any claim, and export the filtered list to CSV
-- Writes a short summary of the pattern using only figures computed from the data
+- Reads a standard 835 file in the browser (nothing is uploaded), or uses 600 built-in synthetic claims.
+- Translates 14 verified reason and remark codes into plain English beside the official X12 wording.
+- Groups every claim into one of five reason categories, plus "Other / Unmapped" so nothing is dropped.
+- Shows claim count, billed and paid amounts, denial rate, average days to remit, and a denial-rate trend for every month in the data.
+- Search, filter, open a claim for its code translation, and export the filtered list to CSV.
+- Writes a short automatic summary. An optional Claude rewrite is checked for invented numbers and advice wording.
 
 ## What it deliberately does not do
 
-ClaimClarity **reports on decisions that were already made**. It never makes, questions or advises on them.
+- Decide whether a claim should be approved, denied or appealed, or advise on appeals or resubmission.
+- Use real patient or payer data. The demo is synthetic; the reader is for test or de-identified files only.
+- Read claim submission files (837), calculate HEDIS measures, post payments, or save anything.
 
-- It does not decide whether a claim should be approved, denied or appealed, or advise on appeals or resubmission
-- It does not use real patient or payer data. The demo is synthetic; the file reader is meant for test or de-identified files only
-- It does not read claim submissions (837), calculate quality measures, post payments, or save anything
-
-This scope is narrow on purpose: it stays inside data and reporting on payer claims, which is where the author's real experience lies.
+The narrow scope is a product decision: my real experience is data and reporting on payer claims, not deciding claims.
 
 ## Try it
 
-1. Open the [live demo](https://apoorvab11.github.io/ClaimClarity/). It loads 600 synthetic claims.
-2. Click a bar under **Reason categories** to filter the ledger to that reason.
-3. Click any claim row to see its codes translated.
-4. Click **Load sample 835 file** to see the reader work on a raw remittance file.
+- **claude.ai:** open the shared link above. The Claude rewrite and CSV download run through the viewer's own Claude account and ask permission first.
+- **Locally:** open `app/index.html` in any browser. No install needed. (The Claude rewrite is hidden and the CSV button becomes "Copy CSV".)
+- **GitHub Pages:** in the repository settings, turn on Pages from the main branch root. `index.html` forwards to the app.
 
-## Product documents
+## How this was built
 
-- [Business Requirements Document (BRD)](docs/BRD.md): problem, users, scope, 13 business requirements and the evidence for each
-- [Functional Requirements Document (FRD)](docs/FRD.md): data specification, 20 functional requirements, code reference, 835 reading rules, calculations and test results
+I led the product work: the problem, users, scope, requirements, the status and category rules, the guardrails and the test cases. I built it with Claude (an AI assistant) writing the code under that direction. I do not claim to be a software engineer. I treat the code as something I specify, review for behavior, and test.
 
-## Honest limits
+## Evidence
 
-- The five categories and the rule that ignores routine adjustments (CO-45, PR-1, PR-2, PR-3) are the author's own choices, not an industry standard
-- Only 14 codes are translated; anything else shows as "Other / Unmapped"
-- Only the first service line and first reason code of each claim are used
-- Tested on hand-built and real-structure sample files, not yet on real de-identified payer files
-- Screen reader use and colour contrast have not been formally tested
-- The business case has not yet been validated with real claims analysts
+| Check | Result |
+| --- | --- |
+| Logic tests (`tests/test_logic.js`) | 52 pass: 835 reading, status and reason rules, grouping, monthly totals, CSV safety, Claude-output guards |
+| Browser tests (`tests/test_browser.js`) | 61 pass: filters (including service date), 835 help tip, collapsible summary, keyboard use, file and paste loading, bad input, markup in a file, phone width |
+| Independent recalculation | Billed, paid, denial rate, average days and status counts match a separate calculation from the raw data |
+| Independent review | An external review raised 14 points; 6 reproduced and were fixed. See the [change log](docs/CHANGELOG.md) |
+| Code wording | Quoted from the official X12 code lists on 2026-10-12 |
 
-See section 6 of the BRD for planned next steps.
+## Known limits
 
-## How it's built
+- The five categories and the rule that ignores routine adjustments (CO-45, PR-1, PR-2, PR-3) are my own choices, not an industry standard. They have had no domain review yet.
+- Only 14 codes are translated. Other codes show as "Other / Unmapped".
+- Only the first reason code on a claim is used for grouping, and only the first procedure code is shown when a claim has several service lines.
+- For 835 files, the "allowed" amount is an estimate (paid plus patient share), and the page says so.
+- Not yet done: testing with real de-identified 835 files, a screen reader test, a colour contrast audit, and testing with real claims analysts.
+- The business case is reasoned for a hypothetical claims team. It has not been validated with real users.
 
-One self-contained page (`index.html`): plain JavaScript and inline SVG charts, no libraries, no server and no database. The X12 code wording was taken from the published lists on [x12.org](https://x12.org/codes/claim-adjustment-reason-codes), read on 12 October 2026.
+## Roadmap
 
-The FRD describes the version published on Claude, which includes an optional AI rewrite of the summary. That feature is not available in the GitHub version, and the CSV export here downloads directly.
+1. Domain review of the category rules and a documented, versioned code mapping.
+2. Test with two or three real de-identified 835 files.
+3. Show every service line of a claim.
+4. Screen reader test and contrast audit.
+5. Interview two or three claims analysts and replace target measures with measured ones.
 
-## About
+## Repository layout
 
-A portfolio project by **Apoorva Bhardwaj**, healthcare data analyst for US payer programs, applying product management to claims operations data. The product direction, domain rules and requirements are hers; the code was written with AI assistance (Claude).
+```
+app/index.html          the single-file page (built output)
+src/template.html       page source
+src/pure.js             logic extracted for tests (built output)
+data/                   synthetic claims and a sample 835
+scripts/generate_data.py  reproducible synthetic data (fixed seed)
+scripts/build.py        builds app/index.html and src/pure.js
+tests/                  logic and browser tests, plus a synthetic test fixture
+docs/                   BRD, FRD, metric definitions, change log, decisions
+```
 
-*All data in the demo is synthetic. No PHI.*
+To rebuild and test: `python3 scripts/build.py`, then `npm test` (needs Node and Playwright for the browser tests).
+
+## Data and notices
+
+All demo claims are synthetic: no real members, providers or payers. Reason and remark code wording is quoted from the X12 code lists for reference; X12 owns those lists. CPT is a trademark of the AMA, so the page shows short service labels written by me, not CPT descriptions.
+
+Licensed under the MIT License (see `LICENSE`).

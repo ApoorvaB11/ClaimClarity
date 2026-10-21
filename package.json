@@ -1,0 +1,12 @@
+{
+  "name": "claimclarity",
+  "version": "2.0.0",
+  "description": "Plain-English view of why health-plan claims were paid, adjusted or denied (EDI 835).",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "build": "python3 scripts/build.py",
+    "test": "node tests/test_logic.js && node tests/test_browser.js"
+  },
+  "devDependencies": { "playwright": "^1.40.0" }
+}

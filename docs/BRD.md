@@ -1,6 +1,5 @@
 # ClaimClarity: Business Requirements (BRD)
-
-Oct 17, 2026 · Apoorva Bhardwaj
+_Last updated 20 October 2026 · Apoorva Bhardwaj_
 
 ## 1. The problem
 
@@ -59,12 +58,12 @@ Priority uses Must, Should or Could. Every requirement is built in the published
 | BR-03 | Show the split of paid, partly paid and denied claims | Instant overview | Must | Built |
 | BR-04 | Show claim count, billed, paid, denial rate and days to remit | The numbers a manager asks for first | Must | Built |
 | BR-05 | Show denial rate for every month in the data | Spot trends, including the latest month | Should | Built |
-| BR-06 | Search and filter by status, category and payer | Find the claims behind a pattern | Must | Built |
+| BR-06 | Search and filter by status, category, payer and service date | Find the claims behind a pattern | Must | Built |
 | BR-07 | Open any claim to see amounts, dates and the code translation | Answer "why this claim?" | Must | Built |
 | BR-08 | State clearly that the tool does not decide or advise | Keeps scope honest and compliance comfortable | Must | Built |
 | BR-09 | Use synthetic data only in the demo | No patient data risk | Must | Built |
 | BR-10 | Summarize patterns in writing; optionally let Claude rewrite it using only the displayed figures | Faster reading, with guard rails | Could | Built |
-| BR-11 | Read a raw 835 file | Works on a team's own test data | Could | Built; also checked against a real-structure sample |
+| BR-11 | Read a raw 835 file | Works on a team's own test data | Could | Built; also checked against a dental-style synthetic sample |
 | BR-12 | Export the filtered list as CSV | Share evidence outside the tool | Could | Built; download needs the viewer's confirmation |
 | BR-13 | Work by keyboard and with a screen reader | Usable by more people | Should | Built; screen reader not yet tested |
 
@@ -83,9 +82,9 @@ Success is judged on whether a reader can understand a claim and the overall pat
 **What has been checked:**
 
 - 52 automated logic checks pass: 835 reading, status and reason rules, grouping, monthly totals, CSV safety, and the guards on the Claude rewrite.
-- 43 browser checks pass: filters, keyboard use, file and paste loading, bad input, markup hidden in a file, and phone-width layout.
+- 61 browser checks pass: filters (including service date), 835 help tip, summary dropdown, keyboard use, file and paste loading, bad input, markup hidden in a file, and phone-width layout.
 - Code wording was quoted from the official X12 code lists on 2026-10-12.
-- A real-structure sample 835 (a dental example with many segment types) loads without errors. An independent review on 17 October 2026 raised 14 points. Six were confirmed by running the code and fixed: service date priority, payments mixed together when a file holds two remittances, unsupported claim statuses, demo dates after today, an estimated "allowed" amount, and privacy wording about the optional Claude rewrite. Two code-group names were also made more accurate ("Authorization Issue" and "Coverage / Medical Necessity").
+- A dental-style synthetic 835 with many segment types loads without errors. An independent review on 17 October 2026 raised 14 points. Six were confirmed by running the code and fixed: service date priority, payments mixed together when a file holds two remittances, unsupported claim statuses, demo dates after today, an estimated "allowed" amount, and privacy wording about the optional Claude rewrite. Two code-group names were also made more accurate ("Authorization Issue" and "Coverage / Medical Necessity").
 
 ## 6. Honest limits and what comes next
 
@@ -108,7 +107,7 @@ Success is judged on whether a reader can understand a claim and the overall pat
 
 ## 7. Requirement-by-requirement evidence
 
-Built does not mean proven. This table separates what a test or an independent check has confirmed from what has only been built. Checked on 17 October 2026 against the published version 5.
+Built does not mean proven. This table separates what a test or an independent check has confirmed from what has only been built. Checked on 20 October 2026 against the published page.
 
 | ID | Evidence | Verdict |
 | --- | --- | --- |
@@ -117,12 +116,12 @@ Built does not mean proven. This table separates what a test or an independent c
 | BR-03 | The summary text agrees with an independent count (494 paid, 50 partly paid, 56 denied). The chart itself is not separately tested | Confirmed for the figures |
 | BR-04 | Billed $163,420.63, paid $90,820.18, denial rate 9.3% and 23.3 average days match a separate recalculation from the raw data | Confirmed |
 | BR-05 | Monthly totals add up to all 600 claims and the month list is complete. October now has 78 claims because dates after today were shifted back, so its rate rests on a bigger share of the data | Confirmed, with that caveat |
-| BR-06 | Filter tests cover category, search, status, payer and zero results | Confirmed |
+| BR-06 | Filter tests cover category, search, status, payer, service date range (54 claims in March 2026, matching a separate count) and zero results | Confirmed |
 | BR-07 | Opening a claim by mouse or keyboard shows the translation. Esc closes it and focus returns | Confirmed |
 | BR-08 | The on-screen statement is tested. Generated text is blocked if it contains advice wording, but advice phrased in other words could still pass | Mostly confirmed |
 | BR-09 | The demo is generated, with no real names or members | Confirmed by design |
 | BR-10 | Tests reject invented numbers and advice wording. They cannot detect a true number attached to the wrong group | Partly confirmed |
-| BR-11 | One hand-built and one real-structure sample load. Two remittances in one file, a differing service date, a missing date and an unsupported status each have a test. No real payer file has been tried | Partly confirmed |
+| BR-11 | One hand-built and one dental-style synthetic sample load. Two remittances in one file, a differing service date, a missing date and an unsupported status each have a test. No real payer file has been tried | Partly confirmed |
 | BR-12 | The export row count and spreadsheet-formula protection are tested. The live download prompt has not been tried | Partly confirmed |
 | BR-13 | Keyboard use and phone width are tested. Screen reader use and colour contrast have not been | Partly confirmed |
 

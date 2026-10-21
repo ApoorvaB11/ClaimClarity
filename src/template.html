@@ -1,0 +1,725 @@
+<title>ClaimClarity</title>
+<style>
+/* Layout concept: one claims-ops console. Data source and summary first, then charts, then the ledger; a side drawer holds claim detail. */
+:root{
+  --bg:#f5f3ee;
+  --surface:#ffffff;
+  --ink:#1c2630;
+  --ink-dim:#4f5a63;
+  --line:#d6d1c4;
+  --navy:#1f3a4d;
+  --teal:#2a6a6e;
+  --amber:#a8611c;
+  --good:#2f6e4b;
+  --warn:#a8611c;
+  --crit:#a03a28;
+  --focus:#1f5fbf;
+  --mono:'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#13181c; --surface:#1b2227; --ink:#e8e6df; --ink-dim:#a3adb4; --line:#2f383e;
+    --navy:#8cbfd8; --teal:#6dbab6; --amber:#e29a55; --good:#78c698; --warn:#e29a55; --crit:#ee7d6d;
+    --focus:#8fb8ff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#13181c; --surface:#1b2227; --ink:#e8e6df; --ink-dim:#a3adb4; --line:#2f383e;
+  --navy:#8cbfd8; --teal:#6dbab6; --amber:#e29a55; --good:#78c698; --warn:#e29a55; --crit:#ee7d6d;
+  --focus:#8fb8ff; color-scheme: dark;
+}
+*{box-sizing:border-box;}
+html,body{min-height:100%;}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;font-size:14px;
+  padding-inline:16px;padding-block:12px;
+}
+button,select,input,textarea{font:inherit;color:inherit;}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px;}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+.wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:14px;}
+
+header.app{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px;}
+.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.brand h1{font-family:'IBM Plex Serif',Georgia,serif;font-size:22px;margin:0;letter-spacing:-.01em;color:var(--navy);}
+.brand .tag{font-size:12px;color:var(--ink-dim);}
+.scope-pill{font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--teal);border:1px solid var(--teal);border-radius:100px;padding:4px 10px;white-space:nowrap;}
+.disclaimer{font-size:12px;line-height:1.55;color:var(--ink-dim);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px;}
+.disclaimer b{color:var(--ink);}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0;}
+.card h2{font-family:'IBM Plex Serif',Georgia,serif;font-size:15px;margin:0 0 10px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.card h2 .hint{font-size:11.5px;font-family:'IBM Plex Sans',sans-serif;color:var(--ink-dim);font-weight:400;}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 11px;font-size:12.5px;cursor:pointer;}
+.btn:hover{background:var(--bg);}
+.btn:focus-within{outline:2px solid var(--focus);outline-offset:2px;}
+.btn[disabled]{opacity:.45;cursor:default;}
+.btn.primary{background:var(--navy);color:var(--surface);border-color:var(--navy);}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.note{font-size:12px;color:var(--ink-dim);line-height:1.5;}
+.msg{font-size:12.5px;margin-top:8px;line-height:1.5;}
+.msg.err{color:var(--crit);} .msg.ok{color:var(--good);}
+/* hover help */
+.info-wrap{position:relative;display:inline-flex;vertical-align:middle;margin-left:8px;}
+.info-btn{background:none;border:0;padding:2px 4px;cursor:help;font-size:12px;color:var(--teal);font-family:'IBM Plex Sans',sans-serif;font-weight:500;display:inline-flex;align-items:center;gap:5px;}
+.info-btn .qm{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:1.5px solid var(--teal);border-radius:50%;font-size:10.5px;line-height:1;}
+.info-tip{display:none;position:absolute;z-index:20;left:0;top:calc(100% + 6px);width:min(340px,82vw);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.18);padding:10px 12px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;font-weight:400;line-height:1.55;text-align:left;}
+.info-wrap:hover .info-tip,.info-wrap:focus-within .info-tip,.info-wrap.open .info-tip{display:block;}
+.info-wrap.dismissed .info-tip{display:none !important;}
+@media (max-width:600px){#srcH{position:relative;} .info-wrap{position:static;} .info-tip{left:0;right:0;width:auto;}}
+.info-tip b{font-weight:600;}
+/* pattern summary dropdown */
+details.sumbox>summary{cursor:pointer;list-style:none;}
+details.sumbox>summary::-webkit-details-marker{display:none;}
+details.sumbox>summary h2{margin:0;justify-content:flex-start;gap:0;}
+details.sumbox>summary h2 .hint{margin-left:auto;padding-left:12px;}
+details.sumbox>summary h2::before{content:"\25B8";display:inline-block;margin-right:8px;flex:none;color:var(--teal);transition:transform .15s;}
+details.sumbox[open]>summary h2::before{transform:rotate(90deg);}
+details.sumbox[open]>summary{margin-bottom:10px;}
+@media (prefers-reduced-motion:reduce){details.sumbox>summary h2::before{transition:none;}}
+.dategrp{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-dim);flex-wrap:wrap;}
+details.paste summary{cursor:pointer;font-size:12.5px;color:var(--teal);margin-top:10px;}
+textarea#pasteBox{width:100%;min-height:110px;margin-top:8px;font-family:var(--mono);font-size:11.5px;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px;resize:vertical;}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0;}
+.kpi .label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-dim);}
+.kpi .value{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:21px;font-weight:600;color:var(--navy);overflow-wrap:anywhere;}
+.kpi .sub{font-size:11.5px;color:var(--ink-dim);}
+
+.summary-text{font-size:14px;line-height:1.6;max-width:75ch;}
+.summary-text p{margin:0 0 6px 0;}
+.badge{display:inline-block;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;border:1px solid var(--line);border-radius:100px;padding:2px 8px;color:var(--ink-dim);margin-bottom:8px;}
+
+.grid{display:grid;grid-template-columns:1.05fr 1fr;gap:12px;}
+@media (max-width:860px){.grid{grid-template-columns:1fr;}}
+.donut-wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.legend{display:flex;flex-direction:column;gap:6px;font-size:12.5px;}
+.legend-row{display:flex;align-items:center;gap:7px;}
+.swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.catbar-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;width:100%;background:none;border:0;padding:3px 0;cursor:pointer;text-align:left;}
+.catbar-row[aria-pressed="true"] .catbar-label{font-weight:600;}
+.catbar-label{width:150px;flex-shrink:0;font-size:12.5px;}
+.catbar-track{flex:1;background:var(--bg);border-radius:4px;height:16px;overflow:hidden;border:1px solid var(--line);}
+.catbar-fill{height:100%;}
+.catbar-count{width:38px;text-align:right;flex-shrink:0;font-family:var(--mono);font-size:12px;color:var(--ink-dim);}
+#trendSvg{width:100%;height:auto;overflow:visible;}
+.axis-label{font-size:10px;fill:var(--ink-dim);font-family:var(--mono);}
+.grid-line{stroke:var(--line);stroke-width:1;}
+@media (max-width:600px){.axis-label{font-size:21px;}}
+
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+select,input[type=search],input[type=date]{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:12.5px;}
+input[type=search]{flex:1;min-width:140px;}
+.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:720px;}
+thead th{text-align:left;padding:8px 10px;background:var(--bg);color:var(--ink-dim);font-weight:600;text-transform:uppercase;font-size:10.5px;letter-spacing:.03em;border-bottom:1px solid var(--line);}
+tbody td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+tbody tr{cursor:pointer;}
+tbody tr:hover{background:var(--bg);}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+.status-chip{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10.5px;font-weight:600;white-space:nowrap;}
+.status-paid{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good);}
+.status-adj{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn);}
+.status-denied{background:color-mix(in srgb,var(--crit) 18%,transparent);color:var(--crit);}
+.table-footer{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11.5px;color:var(--ink-dim);gap:10px;flex-wrap:wrap;}
+.dim{color:var(--ink-dim);}
+
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:40;}
+.backdrop.open{display:block;}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(460px,100vw);background:var(--surface);border-left:1px solid var(--line);z-index:41;transform:translateX(100%);visibility:hidden;transition:transform .2s ease,visibility 0s .2s;overflow-y:auto;padding:18px;}
+.drawer.open{transform:translateX(0);visibility:visible;transition:transform .2s ease;}
+@media (prefers-reduced-motion: reduce){.drawer{transition:none;}}
+.drawer-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px;}
+.drawer-head h3{font-family:'IBM Plex Serif',Georgia,serif;font-size:18px;margin:0;color:var(--navy);}
+.drawer-close{background:none;border:1px solid var(--line);border-radius:6px;width:30px;height:30px;cursor:pointer;flex-shrink:0;}
+.drawer dl{display:grid;grid-template-columns:118px 1fr;gap:8px 10px;font-size:12.5px;margin:0 0 16px 0;}
+.drawer dt{color:var(--ink-dim);} .drawer dd{margin:0;overflow-wrap:anywhere;}
+.translate-box{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-top:4px;}
+.code-block{margin-bottom:12px;} .code-block:last-child{margin-bottom:0;}
+.code-tag{font-family:var(--mono);font-size:11px;background:var(--navy);color:var(--surface);border-radius:4px;padding:2px 6px;display:inline-block;margin-bottom:6px;}
+.code-plain{font-size:13px;line-height:1.5;font-weight:500;}
+.code-official{font-size:12px;line-height:1.5;color:var(--ink-dim);margin-top:4px;}
+.code-official b{font-weight:600;}
+.cat-chip{display:inline-block;background:color-mix(in srgb,var(--teal) 16%,transparent);color:var(--teal);border-radius:100px;padding:3px 10px;font-size:11.5px;font-weight:600;margin-bottom:10px;}
+.out-of-scope{margin-top:14px;font-size:11.5px;color:var(--ink-dim);border-top:1px dashed var(--line);padding-top:10px;line-height:1.5;}
+footer.app{font-size:11.5px;color:var(--ink-dim);text-align:center;padding:14px 0 6px;line-height:1.6;}
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<div class="wrap">
+  <header class="app">
+    <div class="brand">
+      <h1>ClaimClarity</h1>
+      <span class="tag">Remittance code translation and denial-pattern reporting</span>
+    </div>
+    <span class="scope-pill">Reporting tool · not an adjudication engine</span>
+  </header>
+
+  <div class="disclaimer">
+    <b>About this demo.</b> The built-in 600 claims are synthetic: no real members, providers or payers. The denial and adjustment reasons are real X12 codes (CARC and RARC), with wording taken from the published X12 code lists. The grouping into five categories is the author's own and is not an industry standard. This tool <b>translates, groups and reports</b>. It does not decide, recommend or predict anything about a claim's approval, denial, appeal or resubmission.
+  </div>
+
+  <section class="card" aria-labelledby="srcH">
+    <h2 id="srcH"><span>Data source
+        <span class="info-wrap" id="infoWrap">
+          <button class="info-btn" id="infoBtn" type="button" aria-describedby="infoTip" aria-expanded="false"><span class="qm" aria-hidden="true">?</span>What is an 835 file?</button>
+          <span class="info-tip" id="infoTip" role="tooltip"><b>An 835 is a remittance advice.</b> It is the electronic file a health plan sends a provider after it processes claims. Claim by claim, it lists what was billed, what was paid, and the numeric reason codes behind any adjustment or denial. Files usually end in .835, .edi or .txt. ClaimClarity reads one in your browser and translates the codes. No file handy? Use "Load sample 835 file".</span>
+        </span></span> <span class="hint" id="srcHint"></span></h2>
+    <div class="row">
+      <button class="btn primary" id="btnSample835" type="button">Load sample 835 file</button>
+      <label class="btn" for="fileIn" id="fileLabel" style="cursor:pointer">Choose an 835 file</label>
+      <input type="file" id="fileIn" accept=".835,.edi,.txt,.x12,text/plain" class="sr-only">
+      <button class="btn" id="btnDemo" type="button" hidden>Back to demo data</button>
+    </div>
+    <details class="paste">
+      <summary>Or paste 835 text</summary>
+      <textarea id="pasteBox" spellcheck="false" aria-label="Paste raw X12 835 text" placeholder="ISA*00*...~"></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn" id="btnParsePaste" type="button">Read pasted text</button></div>
+    </details>
+    <p class="note" style="margin:10px 0 0">Reading happens in your browser; the page does not upload or store your file. Only if you click "Rewrite with Claude" are the summary figures shown on this page (counts, rates, totals and a payer name) sent to Claude; the claim list is never sent. Fonts load from Google Fonts. Use test or de-identified files only; do not load real patient data.</p>
+    <div class="msg" id="srcMsg" role="status" aria-live="polite"></div>
+  </section>
+
+  <div class="kpis" id="kpiRow"></div>
+
+  <details class="card sumbox" id="sumBox">
+    <summary><h2 id="sumH">Pattern summary <span class="hint">click to open · describes the claims in view; gives no advice</span></h2></summary>
+    <span class="badge" id="sumBadge">Automatic summary</span>
+    <div class="summary-text" id="sumText" aria-live="polite"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn" id="btnClaude" type="button" hidden>Rewrite with Claude</button>
+    </div>
+    <div class="msg note" id="sumMsg"></div>
+  </details>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="outH">
+      <h2 id="outH">Claim outcomes <span class="hint">count, current filters</span></h2>
+      <div class="donut-wrap">
+        <svg id="donutSvg" width="150" height="150" viewBox="0 0 150 150" role="img" aria-label="Claim outcomes chart"></svg>
+        <div class="legend" id="donutLegend"></div>
+      </div>
+    </section>
+    <section class="card" aria-labelledby="catH">
+      <h2 id="catH">Reason categories <span class="hint">select one to filter the ledger</span></h2>
+      <div id="catBars"></div>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="trH">
+    <h2 id="trH">Denial rate by month <span class="hint" id="trHint"></span></h2>
+    <svg id="trendSvg" viewBox="0 0 900 220" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Denial rate by month"></svg>
+    <table class="sr-only" id="trendTable"><caption>Denial rate by remittance month</caption><thead><tr><th>Month</th><th>Claims</th><th>Denied</th><th>Denial rate</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section class="card" aria-labelledby="ledH">
+    <h2 id="ledH">Claim remittance ledger <span class="hint" id="rowCountHint"></span></h2>
+    <div class="filters">
+      <input type="search" id="searchBox" placeholder="Search claim ID, member, payer, CPT..." aria-label="Search claims">
+      <select id="statusFilter" aria-label="Filter by status">
+        <option value="">All statuses</option>
+        <option value="Paid in Full">Paid in Full</option>
+        <option value="Partially Paid / Adjusted">Partially Paid / Adjusted</option>
+        <option value="Denied">Denied</option>
+      </select>
+      <select id="catFilter" aria-label="Filter by category"><option value="">All categories</option></select>
+      <select id="payerFilter" aria-label="Filter by payer"><option value="">All payers</option></select>
+      <div class="dategrp" role="group" aria-label="Filter by service date">
+        <span>Service date</span>
+        <input type="date" id="dateFrom" aria-label="Service date from">
+        <span aria-hidden="true">to</span>
+        <input type="date" id="dateTo" aria-label="Service date to">
+      </div>
+      <button class="btn" id="btnExport" type="button">Download CSV</button>
+    </div>
+    <div class="msg note" id="dateMsg" role="status" aria-live="polite"></div>
+    <div class="msg note" id="expMsg" role="status" aria-live="polite"></div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr>
+          <th scope="col">Claim ID</th><th scope="col">Service date</th><th scope="col">Payer</th><th scope="col">CPT</th>
+          <th scope="col">Billed</th><th scope="col">Paid</th><th scope="col">Status</th><th scope="col">Category</th>
+        </tr></thead>
+        <tbody id="claimsBody"></tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span id="pageInfo" aria-live="polite"></span>
+      <div class="row">
+        <button class="btn" id="prevPage" type="button">Previous</button>
+        <button class="btn" id="nextPage" type="button">Next</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="app">
+    Portfolio project applying AI product management to healthcare claims operations data.<br>
+    Synthetic demo data · X12 CARC/RARC wording as published on x12.org (read 2026-10-12) · No PHI
+  </footer>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+<div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true">
+  <div class="drawer-head">
+    <h3 id="drawerTitle">Claim detail</h3>
+    <button class="drawer-close" id="drawerClose" type="button" aria-label="Close claim detail">✕</button>
+  </div>
+  <div id="drawerBody"></div>
+</div>
+
+<script>
+const DEMO_CLAIMS = __CLAIMS_JSON__;
+const SAMPLE_835 = __SAMPLE_835__;
+
+// <PURE>
+const CODES = {
+  carc: {
+    "4":   {o:"The procedure code is inconsistent with the modifier used.", p:"The procedure code does not fit the modifier used."},
+    "11":  {o:"The diagnosis is inconsistent with the procedure.", p:"The diagnosis on the claim does not fit the procedure billed."},
+    "15":  {o:"The authorization number is missing, invalid, or does not apply to the billed services or provider.", p:"The authorization number is missing, invalid, or does not match the billed service or provider."},
+    "16":  {o:"Claim/service lacks information or has submission/billing error(s).", p:"The claim is missing information or has a billing error."},
+    "18":  {o:"Exact duplicate claim/service (Use only with Group Code OA except where state workers' compensation regulations requires CO)", p:"The payer already has this exact claim or service."},
+    "29":  {o:"The time limit for filing has expired.", p:"The claim reached the payer after its filing deadline."},
+    "49":  {o:"This is a non-covered service because it is a routine/preventive exam or a diagnostic/screening procedure done in conjunction with a routine/preventive exam.", p:"A routine or preventive exam, or a screening or diagnostic test done with one, is not covered."},
+    "50":  {o:"These are non-covered services because this is not deemed a 'medical necessity' by the payer.", p:"The payer did not consider the service medically necessary."},
+    "125": {o:"Submission/billing error(s). At least one Remark Code must be provided", p:"A submission or billing error. The remark code gives the specifics."},
+    "197": {o:"Precertification/authorization/notification/pre-treatment absent.", p:"The required pre-approval was not on file."},
+    "198": {o:"Precertification/notification/authorization/pre-treatment exceeded.", p:"The service went beyond what the pre-approval allowed."}
+  },
+  rarc: {
+    "M51":  {o:"Missing/incomplete/invalid procedure code(s).", p:"A procedure code is missing, incomplete or invalid."},
+    "M86":  {o:"Service denied because payment already made for same/similar procedure within set time frame.", p:"The payer already paid for the same or a similar procedure within its set time frame."},
+    "MA63": {o:"Missing/incomplete/invalid principal diagnosis.", p:"The principal diagnosis is missing, incomplete or invalid."}
+  }
+};
+const CARC_CATEGORY = {
+  "197":"Authorization Issue","198":"Authorization Issue","15":"Authorization Issue",
+  "18":"Duplicate Claim","50":"Coverage / Medical Necessity","49":"Coverage / Medical Necessity",
+  "11":"Coding/Billing Error","16":"Coding/Billing Error","4":"Coding/Billing Error","125":"Coding/Billing Error",
+  "29":"Timely Filing"
+};
+const CATEGORIES = ["Authorization Issue","Duplicate Claim","Coverage / Medical Necessity","Coding/Billing Error","Timely Filing","Other / Unmapped"];
+const CPT_LABELS = {
+  "99213":"Office visit, established patient","99214":"Office visit, established patient, longer","99204":"Office visit, new patient",
+  "80053":"Blood chemistry panel","85025":"Complete blood count","93000":"Electrocardiogram","71046":"Chest X-ray, 2 views",
+  "36415":"Blood draw","20610":"Joint injection or aspiration","97110":"Therapeutic exercise","J1100":"Dexamethasone injection",
+  "45378":"Colonoscopy, diagnostic","77067":"Screening mammogram","90834":"Psychotherapy, 45 minutes","99223":"Initial hospital care"
+};
+const NOT_IN_SET = "Code not in this tool's reference set";
+
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+function catOf(c){ if(!c.carc_code) return null; return CARC_CATEGORY[c.carc_code] || "Other / Unmapped"; }
+function isoDate(s){ return /^\d{8}$/.test(s||'') ? s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8) : ''; }
+function daysBetween(a,b){ const x=Date.parse(a), y=Date.parse(b); return (isFinite(x)&&isFinite(y)) ? Math.round((y-x)/86400000) : null; }
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function monthLabel(ym){ const [y,m]=ym.split('-'); return MONTH_NAMES[+m-1]+' '+y.slice(2); }
+function monthKeys(list){
+  const ms = list.map(c=>c.remittance_date.slice(0,7)).filter(x=>/^\d{4}-\d{2}$/.test(x)).sort();
+  if(!ms.length) return [];
+  const out=[]; let [y,m]=ms[0].split('-').map(Number); const [ey,em]=ms[ms.length-1].split('-').map(Number);
+  while(y<ey || (y===ey && m<=em)){ out.push(y+'-'+String(m).padStart(2,'0')); m++; if(m>12){m=1;y++;} if(out.length>60) break; }
+  return out;
+}
+function monthlyRates(list, months){
+  const t={}; months.forEach(m=>t[m]={total:0,denied:0});
+  list.forEach(c=>{ const m=c.remittance_date.slice(0,7); if(t[m]){ t[m].total++; if(c.status==='Denied') t[m].denied++; } });
+  return months.map(m=>({month:m,total:t[m].total,denied:t[m].denied,rate:t[m].total? t[m].denied/t[m].total*100 : null}));
+}
+
+const SUPPORTED_CLP = new Set(['1','2','3','4','19','20','21']);
+function parse835(raw){
+  const text = String(raw||'').replace(/^﻿/,'').replace(/^\s+/,'');
+  const warnings = [];
+  if(text.length > 2000000) throw new Error('File is larger than 2 MB. Use a smaller sample.');
+  if(text.slice(0,3) !== 'ISA' || text.length < 106) throw new Error('This does not look like an X12 file. It should start with an ISA segment.');
+  const el = text[3], sub = text[104], term = text[105];
+  const segs = text.split(term).map(s=>s.replace(/^\s+|\s+$/g,'')).filter(Boolean).map(s=>s.split(el));
+  if(!segs.some(s=>s[0]==='ST' && s[1]==='835')) throw new Error('No ST*835 segment found. This tool reads 835 remittance files only.');
+  const num = x => { const n=parseFloat(x); return isFinite(n)? n : 0; };
+  let payer='', bprDate='', cur=null; const claims=[]; const payers=[];
+  for(const s of segs){
+    const id=s[0];
+    if(id==='ST'){ payer=''; bprDate=''; cur=null; }
+    else if(id==='N1' && s[1]==='PR'){ payer = s[2]||''; if(payer && payers.indexOf(payer)<0) payers.push(payer); }
+    else if(id==='BPR'){ bprDate = s[16]||''; }
+    else if(id==='CLP'){
+      cur = {pcn:s[1]||'', st:s[2]||'', charge:num(s[3]), paid:num(s[4]), pt:num(s[5]), fac:s[8]||'', cas:[], member:'', ilMember:'', svcCount:0, payer:payer, bpr:bprDate, sd:'', sd2:'', cpt:'', rarcs:[]};
+      claims.push(cur);
+    } else if(cur){
+      if(id==='CAS'){ for(let i=2;i+1<s.length;i+=3){ if(s[i]) cur.cas.push({g:s[1], c:s[i], a:num(s[i+1])}); } }
+      else if(id==='NM1' && s[1]==='QC'){ cur.member = s[9]||''; }
+      else if(id==='NM1' && s[1]==='IL' && !cur.ilMember){ cur.ilMember = s[9]||''; }
+      else if(id==='DTM' && s[1]==='232' && !cur.sd){ cur.sd = s[2]||''; }
+      else if(id==='DTM' && s[1]==='472' && !cur.sd2){ cur.sd2 = s[2]||''; }
+      else if(id==='SVC' && (cur.svcCount++, !cur.cpt)){ const comp=(s[1]||'').split(sub); cur.cpt = (comp.length>1 ? comp[1] : comp[0]) || ''; }
+      else if(id==='LQ' && s[1]==='HE' && s[2]){ cur.rarcs.push(s[2]); }
+      else if(id==='MOA'){ for(let i=3;i<=7;i++){ if(s[i]) cur.rarcs.push(s[i]); } }
+    }
+  }
+  if(!claims.length) throw new Error('No claims (CLP segments) were found in this file.');
+  if(claims.length > 5000){ warnings.push('Only the first 5,000 claims were read.'); claims.length = 5000; }
+  const isRoutine = a => (a.g==='CO' && a.c==='45') || (a.g==='PR' && (a.c==='1'||a.c==='2'||a.c==='3'));
+  const records=[]; let skipped=0; const unsupported={}; let noService=0;
+  claims.forEach((c,i)=>{
+    if(c.st==='22'){ skipped++; return; }
+    if(!SUPPORTED_CLP.has(c.st)){ unsupported[c.st||'(blank)']=(unsupported[c.st||'(blank)']||0)+1; return; }
+    const adj = c.cas.filter(a=>!isRoutine(a));
+    const status = c.st==='4' ? 'Denied' : (adj.length ? 'Partially Paid / Adjusted' : 'Paid in Full');
+    const carc = adj.length ? adj[0].c : null;
+    const rarc = status==='Denied' || adj.length ? (c.rarcs[0]||null) : null;
+    const remit = isoDate(c.bpr);
+    const svcDate = isoDate(c.sd2||c.sd); if(!svcDate) noService++;
+    const rec = {
+      claim_id: c.pcn || ('CLP-'+(i+1)), member_id: c.member || c.ilMember || '—', payer: c.payer || 'Unknown payer',
+      provider_specialty: 'Not in 835', place_of_service: c.fac ? 'Facility type '+c.fac : 'Not in 835',
+      service_date: svcDate, remittance_date: remit, clp_status: c.st,
+      cpt_code: c.cpt, cpt_description: CPT_LABELS[c.cpt] || (c.cpt ? NOT_IN_SET : ''),
+      billed_amount: c.charge, status: status, carc_code: carc, rarc_code: rarc, denial_category: null,
+      allowed_amount: status==='Denied' ? 0 : +(c.paid + c.pt).toFixed(2), allowed_estimated: true, paid_amount: c.paid, patient_responsibility: c.pt
+    };
+    rec.denial_category = catOf(rec);
+    records.push(rec);
+  });
+  const multi = claims.filter(c=>c.svcCount>1).length;
+  if(multi) warnings.push(multi+' claim(s) have several service lines; only the first procedure code is shown for each.');
+  const un = Object.keys(unsupported);
+  if(un.length) warnings.push(un.reduce((n,k)=>n+unsupported[k],0)+' claim(s) with unsupported status code(s) '+un.join(', ')+' were not counted.');
+  if(noService) warnings.push(noService+' claim(s) have no service date and are left out of days-to-remit.');
+  if(skipped) warnings.push(skipped+' reversal claim(s) (status 22) were skipped.');
+  if(!records.some(r=>r.remittance_date)) warnings.push('No payment date (BPR16) found; monthly trend will be empty.');
+  return {records, warnings, payer: payers.length>1 ? payers.length+' payers' : (payers[0]||'')};
+}
+
+function buildFacts(list, months){
+  const total=list.length; if(!total) return null;
+  const denied=list.filter(c=>c.status==='Denied'), partial=list.filter(c=>c.status==='Partially Paid / Adjusted');
+  const coded=list.filter(c=>c.denial_category);
+  const cc={}; coded.forEach(c=>{ cc[c.denial_category]=(cc[c.denial_category]||0)+1; });
+  const top=Object.entries(cc).sort((a,b)=>b[1]-a[1])[0] || null;
+  const billed=list.reduce((s,c)=>s+c.billed_amount,0);
+  const deniedBilled=denied.reduce((s,c)=>s+c.billed_amount,0);
+  const rates=monthlyRates(list, months).filter(r=>r.rate!==null);
+  const pm={}; list.forEach(c=>{ pm[c.payer]=pm[c.payer]||{t:0,d:0}; pm[c.payer].t++; if(c.status==='Denied') pm[c.payer].d++; });
+  const pay=Object.entries(pm).filter(([k,v])=>v.t>=10).map(([k,v])=>({name:k,rate:v.d/v.t*100,t:v.t})).sort((a,b)=>b.rate-a.rate)[0]||null;
+  return {total, denied:denied.length, partial:partial.length, rate:denied.length/total*100, top:top&&{name:top[0],n:top[1],pct:top[1]/coded.length*100}, coded:coded.length,
+          billed, deniedBilled, first:rates[0]||null, last:rates[rates.length-1]||null, peak:rates.slice().sort((a,b)=>b.rate-a.rate)[0]||null, multi:rates.length>1, pay};
+}
+function fmt1(n){ return n.toFixed(1); }
+function money0(n){ return '$'+Math.round(n).toLocaleString('en-US'); }
+function factLines(f){
+  if(!f) return [];
+  const L=[];
+  L.push(`${f.total} claims in view: ${f.denied} denied (${fmt1(f.rate)}%) and ${f.partial} partially paid or adjusted.`);
+  if(f.top) L.push(`The most common reason group is ${f.top.name}, with ${f.top.n} of ${f.coded} coded claims (${fmt1(f.top.pct)}%).`);
+  if(f.multi){
+    L.push(`The monthly denial rate was ${fmt1(f.first.rate)}% in ${monthLabel(f.first.month)} and ${fmt1(f.last.rate)}% in ${monthLabel(f.last.month)}; the highest month was ${monthLabel(f.peak.month)} at ${fmt1(f.peak.rate)}%.`);
+  }
+  L.push(`Denied claims account for ${money0(f.deniedBilled)} of ${money0(f.billed)} billed.`);
+  if(f.pay) L.push(`Among payers with at least 10 claims, ${f.pay.name} has the highest denial rate at ${fmt1(f.pay.rate)}% (${f.pay.t} claims).`);
+  return L;
+}
+function numbersIn(s){ return (String(s).match(/\d[\d,]*\.?\d*/g)||[]).map(x=>x.replace(/,/g,'').replace(/\.$/,'')); }
+function claudeTextIsGrounded(answer, facts){
+  const allowed = new Set(numbersIn(facts));
+  return numbersIn(answer).every(n=>allowed.has(n));
+}
+function claudeTextHasAdvice(answer){ return /\b(appeal|resubmi\w*|should|recommend\w*|advis\w*|suggest\w*|must|need to|consider)\b/i.test(answer); }
+function csvCell(v, isText){
+  let s = v==null ? '' : String(v);
+  if(isText && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return /[",\n\r]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+function describeCode(kind, code){
+  if(!code) return {plain:'', official:''};
+  const e = CODES[kind][code];
+  return e ? {plain:e.p, official:e.o} : {plain:NOT_IN_SET, official:''};
+}
+function toCSV(list){
+  const head = ['claim_id','member_id','payer','provider_specialty','place_of_service','service_date','remittance_date','cpt_code','service','billed','allowed','paid','patient_responsibility','status','category','carc','carc_plain_english','carc_x12_wording','rarc','rarc_plain_english','rarc_x12_wording'];
+  const rows = list.map(c=>{
+    const a=describeCode('carc',c.carc_code), b=describeCode('rarc',c.rarc_code);
+    return [csvCell(c.claim_id,1),csvCell(c.member_id,1),csvCell(c.payer,1),csvCell(c.provider_specialty,1),csvCell(c.place_of_service,1),csvCell(c.service_date),csvCell(c.remittance_date),csvCell(c.cpt_code,1),csvCell(c.cpt_description,1),
+      csvCell(c.billed_amount),csvCell(c.allowed_amount),csvCell(c.paid_amount),csvCell(c.patient_responsibility),csvCell(c.status,1),csvCell(c.denial_category,1),
+      csvCell(c.carc_code,1),csvCell(a.plain,1),csvCell(a.official,1),csvCell(c.rarc_code,1),csvCell(b.plain,1),csvCell(b.official,1)].join(',');
+  });
+  return [head.join(',')].concat(rows).join('\n');
+}
+// </PURE>
+
+const CATEGORY_COLORS = {
+  "Authorization Issue":"#2a6a6e","Duplicate Claim":"#6f62a0","Coverage / Medical Necessity":"#b0661c",
+  "Coding/Billing Error":"#a03a28","Timely Filing":"#3b6ea5","Other / Unmapped":"#6b757d"
+};
+const STATUS_COLORS = {"Paid in Full":"#2f6e4b","Partially Paid / Adjusted":"#b0661c","Denied":"#a03a28"};
+
+let DATA = DEMO_CLAIMS.map(c=>Object.assign({}, c, {denial_category: catOf(c)}));
+let source = {kind:'demo', label:'Demo data: 600 synthetic claims, remitted Jan to Oct 2026'};
+let state = {search:'', status:'', category:'', payer:'', from:'', to:'', page:1, pageSize:12};
+let lastFocus = null, claudeCtl = null;
+
+const $ = id => document.getElementById(id);
+function fmtMoney(n){ return (n==null) ? '—' : '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function statusClass(s){ return s==='Paid in Full' ? 'status-paid' : (s==='Denied' ? 'status-denied' : 'status-adj'); }
+
+function filtered(){
+  const q = state.search.trim().toLowerCase();
+  return DATA.filter(c=>{
+    if(state.status && c.status!==state.status) return false;
+    if(state.category && c.denial_category!==state.category) return false;
+    if(state.payer && c.payer!==state.payer) return false;
+    if(state.from && !(c.service_date && c.service_date>=state.from)) return false;
+    if(state.to && !(c.service_date && c.service_date<=state.to)) return false;
+    if(q){ const hay=(c.claim_id+' '+c.member_id+' '+c.payer+' '+c.cpt_code+' '+c.cpt_description).toLowerCase(); if(!hay.includes(q)) return false; }
+    return true;
+  });
+}
+function fillFilterOptions(){
+  const cs = $('catFilter'), ps = $('payerFilter');
+  cs.length = 1; ps.length = 1;
+  CATEGORIES.filter(k=>DATA.some(c=>c.denial_category===k)).forEach(k=>cs.add(new Option(k,k)));
+  [...new Set(DATA.map(c=>c.payer))].sort().forEach(p=>ps.add(new Option(p,p)));
+  cs.value = state.category; ps.value = state.payer;
+  const ds = DATA.map(c=>c.service_date).filter(Boolean).sort();
+  ['dateFrom','dateTo'].forEach(id=>{ const el=$(id); if(ds.length){ el.min=ds[0]; el.max=ds[ds.length-1]; } else { el.removeAttribute('min'); el.removeAttribute('max'); } });
+}
+
+function renderKPIs(list){
+  const total=list.length, billed=list.reduce((s,c)=>s+c.billed_amount,0), paid=list.reduce((s,c)=>s+(c.paid_amount||0),0);
+  const denied=list.filter(c=>c.status==='Denied').length;
+  const ds=list.map(c=>daysBetween(c.service_date,c.remittance_date)).filter(x=>x!==null);
+  const avg = ds.length ? ds.reduce((a,b)=>a+b,0)/ds.length : null;
+  const k=[
+    {l:'Claims in view', v:total.toLocaleString(), s:'of '+DATA.length.toLocaleString()+' loaded'},
+    {l:'Billed amount', v:fmtMoney(billed), s:'selected claims'},
+    {l:'Paid amount', v:fmtMoney(paid), s: billed ? fmt1(paid/billed*100)+'% of billed' : '—'},
+    {l:'Denial rate', v: total ? fmt1(denied/total*100)+'%' : '—', s: denied+' denied claims'},
+    {l:'Avg. days to remit', v: avg===null ? '—' : fmt1(avg), s:'service to remittance date'}
+  ];
+  $('kpiRow').innerHTML = k.map(x=>`<div class="kpi"><div class="label">${esc(x.l)}</div><div class="value">${esc(x.v)}</div><div class="sub">${esc(x.s)}</div></div>`).join('');
+}
+
+function renderDonut(list){
+  const counts={}; list.forEach(c=>{ counts[c.status]=(counts[c.status]||0)+1; });
+  const total=list.length, order=['Paid in Full','Partially Paid / Adjusted','Denied'];
+  const cx=75, cy=75, r=60, inner=34, rad=a=>a*Math.PI/180; let angle=-90, paths='';
+  order.forEach(key=>{
+    const n=counts[key]||0; if(!n) return;
+    const sweep = n===total ? 359.99 : n/total*360, a0=angle, a1=angle+sweep, big = sweep>180?1:0;
+    const p=(R,a)=>[(cx+R*Math.cos(rad(a))).toFixed(2),(cy+R*Math.sin(rad(a))).toFixed(2)];
+    const [x1,y1]=p(r,a0),[x2,y2]=p(r,a1),[x3,y3]=p(inner,a1),[x4,y4]=p(inner,a0);
+    paths += `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${big} 1 ${x2} ${y2} L ${x3} ${y3} A ${inner} ${inner} 0 ${big} 0 ${x4} ${y4} Z" fill="${STATUS_COLORS[key]}"></path>`;
+    angle = a1;
+  });
+  const lbl = order.map(k=>`${k}: ${counts[k]||0}`).join(', ');
+  $('donutSvg').setAttribute('aria-label','Claim outcomes. '+lbl);
+  $('donutSvg').innerHTML = paths || `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${r-inner}"></circle>`;
+  $('donutLegend').innerHTML = order.map(k=>{ const n=counts[k]||0; return `<div class="legend-row"><span class="swatch" style="background:${STATUS_COLORS[k]}"></span>${esc(k)}: ${n} (${total? fmt1(n/total*100):'0.0'}%)</div>`; }).join('');
+}
+
+function renderCats(list){
+  const counts={}; list.forEach(c=>{ if(c.denial_category) counts[c.denial_category]=(counts[c.denial_category]||0)+1; });
+  const max=Math.max(1,...Object.values(counts));
+  const cats = CATEGORIES.filter(k=>k!=='Other / Unmapped' || counts[k] || state.category===k);
+  $('catBars').innerHTML = cats.map(k=>{
+    const n=counts[k]||0;
+    return `<button type="button" class="catbar-row" data-cat="${esc(k)}" aria-pressed="${state.category===k}" aria-label="${esc(k)}: ${n} claims. Filter ledger by this category.">
+      <span class="catbar-label">${esc(k)}</span><span class="catbar-track"><span class="catbar-fill" style="display:block;width:${n/max*100}%;background:${CATEGORY_COLORS[k]}"></span></span><span class="catbar-count">${n}</span></button>`;
+  }).join('');
+  document.querySelectorAll('.catbar-row').forEach(b=>b.addEventListener('click',()=>{
+    const k=b.getAttribute('data-cat'); state.category = state.category===k ? '' : k; $('catFilter').value=state.category; state.page=1; renderAll();
+  }));
+}
+
+function renderTrend(list){
+  const months = monthKeys(DATA), rows = monthlyRates(list, months);
+  const W=900,H=230,L=42,R=16,T=16,B=34, pw=W-L-R, ph=H-T-B;
+  const vals=rows.filter(r=>r.rate!==null).map(r=>r.rate);
+  const maxRate=Math.max(20, Math.ceil(Math.max(0,...vals)/5)*5);
+  const x=i=> rows.length>1 ? L+i/(rows.length-1)*pw : L+pw/2, y=v=> T+ph-v/maxRate*ph;
+  let g='';
+  for(let i=0;i<=4;i++){ const v=maxRate/4*i, yy=y(v); g+=`<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" class="grid-line"></line><text x="${L-8}" y="${yy+3}" text-anchor="end" class="axis-label">${v%1? v.toFixed(1):v}%</text>`; }
+  let d='', dots='', first=true;
+  rows.forEach((r,i)=>{
+    if(r.rate===null){ first=true; return; }
+    d += (first?'M':'L')+x(i).toFixed(1)+' '+y(r.rate).toFixed(1)+' '; first=false;
+    dots += `<circle cx="${x(i).toFixed(1)}" cy="${y(r.rate).toFixed(1)}" r="4" fill="var(--amber)"><title>${esc(monthLabel(r.month))}: ${r.denied} of ${r.total} claims denied (${fmt1(r.rate)}%)</title></circle>`;
+  });
+  const labs = rows.map((r,i)=>`<text x="${x(i).toFixed(1)}" y="${H-10}" text-anchor="middle" class="axis-label">${esc(monthLabel(r.month))}</text>`).join('');
+  $('trendSvg').innerHTML = rows.length ? g+`<path d="${d}" fill="none" stroke="var(--amber)" stroke-width="2.5"></path>`+dots+labs : `<text x="${W/2}" y="${H/2}" text-anchor="middle" class="axis-label">No payment dates available for a monthly trend.</text>`;
+  $('trendSvg').setAttribute('aria-label', rows.length ? 'Denial rate by month. '+rows.map(r=>`${monthLabel(r.month)} ${r.rate===null?'no claims':fmt1(r.rate)+'%'}`).join(', ') : 'No monthly data');
+  $('trendTable').querySelector('tbody').innerHTML = rows.map(r=>`<tr><td>${esc(monthLabel(r.month))}</td><td>${r.total}</td><td>${r.denied}</td><td>${r.rate===null?'n/a':fmt1(r.rate)+'%'}</td></tr>`).join('');
+  $('trHint').textContent = rows.length ? `% of remitted claims denied, ${monthLabel(rows[0].month)} to ${monthLabel(rows[rows.length-1].month)}` : '';
+}
+
+function renderSummary(list){
+  const f=buildFacts(list, monthKeys(DATA)); const lines=factLines(f);
+  $('sumBadge').textContent='Automatic summary';
+  $('sumText').innerHTML = lines.length ? lines.map(l=>`<p>${esc(l)}</p>`).join('') : '<p>No claims match the current filters.</p>';
+  $('sumMsg').textContent='';
+  $('btnClaude').disabled = !lines.length;
+  window.__facts = lines.join('\n');
+}
+
+function renderTable(list){
+  const pages=Math.max(1,Math.ceil(list.length/state.pageSize)); if(state.page>pages) state.page=pages;
+  const start=(state.page-1)*state.pageSize, items=list.slice(start,start+state.pageSize);
+  $('claimsBody').innerHTML = items.map(c=>`<tr data-id="${esc(c.claim_id)}" tabindex="0" role="button" aria-label="Open claim ${esc(c.claim_id)}, ${esc(c.status)}">
+    <td class="mono">${esc(c.claim_id)}</td><td class="mono">${esc(c.service_date||"—")}</td><td>${esc(c.payer)}</td><td class="mono">${esc(c.cpt_code)}</td>
+    <td class="mono">${fmtMoney(c.billed_amount)}</td><td class="mono">${c.status==='Denied'?'<span class="dim">—</span>':fmtMoney(c.paid_amount)}</td>
+    <td><span class="status-chip ${statusClass(c.status)}">${esc(c.status)}</span></td><td>${c.denial_category?esc(c.denial_category):'<span class="dim">—</span>'}</td></tr>`).join('')
+    || '<tr><td colspan="8" class="dim">No claims match the current filters.</td></tr>';
+  document.querySelectorAll('#claimsBody tr[data-id]').forEach(tr=>{
+    const open=()=>openDrawer(tr.getAttribute('data-id'), tr);
+    tr.addEventListener('click',open);
+    tr.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
+  });
+  $('pageInfo').textContent=`Page ${state.page} of ${pages} · ${list.length} claim${list.length===1?'':'s'} match`;
+  $('prevPage').disabled = state.page<=1; $('nextPage').disabled = state.page>=pages;
+  $('rowCountHint').textContent=`${list.length} of ${DATA.length}`;
+}
+
+function codeBlock(kind, code){
+  const e = CODES[kind][code], tag = kind.toUpperCase()+' '+code;
+  if(!e) return `<div class="code-block"><span class="code-tag">${esc(tag)}</span><div class="code-plain">${NOT_IN_SET}.</div></div>`;
+  return `<div class="code-block"><span class="code-tag">${esc(tag)}</span><div class="code-plain">${esc(e.p)}</div><div class="code-official"><b>X12 wording:</b> ${esc(e.o)}</div></div>`;
+}
+function openDrawer(id, from){
+  const c = DATA.find(x=>x.claim_id===id); if(!c) return;
+  lastFocus = from || document.activeElement;
+  $('drawerTitle').textContent = c.claim_id;
+  const codes = c.carc_code ? codeBlock('carc',c.carc_code) + (c.rarc_code ? codeBlock('rarc',c.rarc_code) : '')
+    : '<div class="code-plain">No adjustment or denial codes on this remittance.</div>';
+  $('drawerBody').innerHTML = `${c.denial_category?`<span class="cat-chip">${esc(c.denial_category)}</span>`:''}
+    <dl><dt>Member</dt><dd class="mono">${esc(c.member_id)}</dd><dt>Payer</dt><dd>${esc(c.payer)}</dd>
+    <dt>Specialty</dt><dd>${esc(c.provider_specialty)}</dd><dt>Place</dt><dd>${esc(c.place_of_service)}</dd>
+    <dt>Service date</dt><dd class="mono">${esc(c.service_date||"Not in file")}</dd><dt>Remittance date</dt><dd class="mono">${esc(c.remittance_date)}</dd>
+    <dt>Procedure</dt><dd class="mono">${esc(c.cpt_code)} ${c.cpt_description?'· '+esc(c.cpt_description):''}</dd>
+    <dt>Billed</dt><dd class="mono">${fmtMoney(c.billed_amount)}</dd><dt>${c.allowed_estimated?'Allowed (est.)':'Allowed'}</dt><dd class="mono">${fmtMoney(c.allowed_amount)}</dd>
+    <dt>Paid</dt><dd class="mono">${fmtMoney(c.paid_amount)}</dd><dt>Patient resp.</dt><dd class="mono">${fmtMoney(c.patient_responsibility)}</dd>
+    <dt>Status</dt><dd><span class="status-chip ${statusClass(c.status)}">${esc(c.status)}</span></dd></dl>
+    <h4 style="margin:0 0 6px;font-size:12px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.03em">Code translation</h4>
+    <div class="translate-box">${codes}</div>
+    <div class="out-of-scope">This panel translates the codes on file. It does not judge whether the original decision was right, suggest an appeal or resubmission, or predict an outcome. Plain-English lines are the author's summaries of the X12 wording shown beneath them.</div>`;
+  $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden','false'); $('backdrop').classList.add('open');
+  $('drawerClose').focus();
+}
+function closeDrawer(){
+  $('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden','true'); $('backdrop').classList.remove('open');
+  if(lastFocus && document.contains(lastFocus)) lastFocus.focus();
+}
+
+function renderAll(){
+  $('dateMsg').textContent = (state.from && state.to && state.from>state.to) ? 'The "from" date is after the "to" date, so no claims match. Swap the dates.' : (((state.from||state.to)) ? 'Claims with no service date in the file are left out while a date filter is on.' : '');
+  const list=filtered();
+  renderKPIs(list); renderDonut(list); renderCats(list); renderTrend(list); renderSummary(list); renderTable(list);
+  $('srcHint').textContent = source.label;
+  $('btnDemo').hidden = source.kind==='demo';
+}
+
+function setSource(records, label, kind){
+  DATA = records; source = {kind, label};
+  state = {search:'', status:'', category:'', payer:'', from:'', to:'', page:1, pageSize:12};
+  $('searchBox').value=''; $('statusFilter').value=''; $('dateFrom').value=''; $('dateTo').value='';
+  fillFilterOptions(); renderAll();
+}
+function loadText(text, name){
+  const msg=$('srcMsg'); msg.className='msg';
+  try{
+    const r = parse835(text);
+    setSource(r.records, `${name}: ${r.records.length} claims from ${r.payer||'unknown payer'}`, '835');
+    const un = r.records.filter(c=>c.denial_category==='Other / Unmapped').length;
+    let t = `Read ${r.records.length} claims.`;
+    if(un) t += ` ${un} use a reason code outside this tool's reference set and are grouped as Other / Unmapped.`;
+    if(r.warnings.length) t += ' ' + r.warnings.join(' ');
+    msg.classList.add('ok'); msg.textContent = t;
+  }catch(e){
+    msg.classList.add('err'); msg.textContent = ((e && e.message) ? e.message : 'The file could not be read.') + ' The data that was already on screen is still shown.';
+  }
+}
+$('btnSample835').addEventListener('click',()=>loadText(SAMPLE_835,'Sample 835'));
+$('btnDemo').addEventListener('click',()=>{ setSource(DEMO_CLAIMS.map(c=>Object.assign({},c,{denial_category:catOf(c)})),'Demo data: 600 synthetic claims, remitted Jan to Oct 2026','demo'); $('srcMsg').className='msg'; $('srcMsg').textContent='Back to the synthetic demo data.'; });
+$('fileIn').addEventListener('change',e=>{
+  const f=e.target.files && e.target.files[0]; if(!f) return;
+  if(f.size>2000000){ $('srcMsg').className='msg err'; $('srcMsg').textContent='File is larger than 2 MB. Use a smaller sample.'; return; }
+  const rd=new FileReader(); rd.onload=()=>loadText(String(rd.result), f.name.slice(0,60)); rd.onerror=()=>{ $('srcMsg').className='msg err'; $('srcMsg').textContent='The file could not be read.'; }; rd.readAsText(f); e.target.value='';
+});
+$('btnParsePaste').addEventListener('click',()=>{ const t=$('pasteBox').value; if(!t.trim()){ $('srcMsg').className='msg err'; $('srcMsg').textContent='Paste some 835 text first.'; return; } loadText(t,'Pasted text'); });
+
+$('searchBox').addEventListener('input',e=>{ state.search=e.target.value; state.page=1; renderAll(); });
+$('statusFilter').addEventListener('change',e=>{ state.status=e.target.value; state.page=1; renderAll(); });
+$('catFilter').addEventListener('change',e=>{ state.category=e.target.value; state.page=1; renderAll(); });
+$('payerFilter').addEventListener('change',e=>{ state.payer=e.target.value; state.page=1; renderAll(); });
+$('dateFrom').addEventListener('change',e=>{ state.from=e.target.value; state.page=1; renderAll(); });
+$('dateTo').addEventListener('change',e=>{ state.to=e.target.value; state.page=1; renderAll(); });
+(function(){ const w=$('infoWrap'), b=$('infoBtn');
+  const setOpen=o=>{ w.classList.toggle('open',o); b.setAttribute('aria-expanded',String(o)); };
+  b.addEventListener('click',e=>{ e.stopPropagation(); w.classList.remove('dismissed'); setOpen(!w.classList.contains('open')); });
+  w.addEventListener('mouseenter',()=>w.classList.remove('dismissed'));
+  b.addEventListener('blur',()=>w.classList.remove('dismissed'));
+  document.addEventListener('click',e=>{ if(!w.contains(e.target)) setOpen(false); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && (w.classList.contains('open')||w.matches(':hover')||w.contains(document.activeElement))){ setOpen(false); w.classList.add('dismissed'); } });
+})();
+$('prevPage').addEventListener('click',()=>{ if(state.page>1){ state.page--; renderTable(filtered()); } });
+$('nextPage').addEventListener('click',()=>{ state.page++; renderTable(filtered()); });
+$('drawerClose').addEventListener('click',closeDrawer);
+$('backdrop').addEventListener('click',closeDrawer);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape' && $('drawer').classList.contains('open')){ closeDrawer(); }
+  if(e.key==='Tab' && $('drawer').classList.contains('open')){ e.preventDefault(); $('drawerClose').focus(); }
+});
+
+// Export: download through the viewer's confirmation when available; otherwise copy to clipboard.
+let downloadsCap = null, sampleCap = null;
+$('btnExport').addEventListener('click', async ()=>{
+  const list=filtered(), m=$('expMsg'); m.className='msg note';
+  if(!list.length){ m.textContent='No claims to export.'; return; }
+  const csv = toCSV(list);
+  if(downloadsCap){
+    try{ await downloadsCap.save({filename:'claimclarity-ledger.csv', data:csv}); m.textContent=`Saved ${list.length} claims.`; }
+    catch(e){ m.textContent = (e && e.code==='declined') ? 'Download cancelled.' : 'The download could not be completed.'; }
+  } else {
+    try{ await navigator.clipboard.writeText(csv); m.textContent=`Copied ${list.length} claims as CSV to the clipboard.`; }
+    catch(e){ m.textContent='Download and copy are not available in this view.'; }
+  }
+});
+
+// Optional Claude rewrite of the summary, accepted only if every number comes from the facts shown.
+$('btnClaude').addEventListener('click', async ()=>{
+  if(!sampleCap) return;
+  const facts = window.__facts || ''; if(!facts) return;
+  const btn=$('btnClaude'), msg=$('sumMsg'); btn.disabled=true; msg.textContent='Thinking...';
+  if(claudeCtl) claudeCtl.abort(); claudeCtl = new AbortController();
+  const prompt = 'You are rewriting a short descriptive summary of healthcare claim remittance data for a reporting dashboard.\n'
+    + 'Rules: use ONLY the numbers in FACTS; do not add, round, convert or compute any new number; do not give advice, causes, predictions or recommendations; '
+    + 'do not suggest appeals, resubmission or any action on a claim. Write 2 to 4 plain sentences, under 90 words.\n\nFACTS:\n' + facts;
+  try{
+    const r = await sampleCap(prompt, {modelTier:'quick', signal:claudeCtl.signal});
+    if(!claudeTextIsGrounded(r.text, facts)){
+      msg.textContent='Claude’s version used a figure that is not in the data, so it was discarded. The automatic summary above stays.';
+    } else if(claudeTextHasAdvice(r.text)){
+      msg.textContent='Claude’s version contained advice-style wording, so it was discarded. The automatic summary above stays.';
+    } else {
+      $('sumText').innerHTML = '<p>'+esc(r.text.trim())+'</p>'; $('sumBadge').textContent='Written by Claude from the figures above';
+      msg.textContent='Every figure in this text appears in the automatic summary.';
+    }
+  }catch(e){
+    msg.textContent = (e && e.code==='not_granted') ? 'Claude access was not allowed for this page.' : (e && e.code==='cancelled') ? '' : 'Claude could not rewrite the summary right now.';
+  }finally{ btn.disabled=false; }
+});
+
+fillFilterOptions();
+renderAll();
+
+(async ()=>{
+  try{ if(window.claude && window.claude.use){
+    downloadsCap = await window.claude.use('downloads');
+    sampleCap = await window.claude.use('sample');
+    $('btnClaude').hidden = !sampleCap;
+    $('btnExport').textContent = downloadsCap ? 'Download CSV' : 'Copy CSV';
+  } else { $('btnExport').textContent='Copy CSV'; } }catch(e){ $('btnExport').textContent='Copy CSV'; }
+})();
+</script>
