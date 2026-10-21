@@ -8,6 +8,7 @@ ClaimClarity reads a payer remittance file (EDI 835) and turns its numeric reaso
 > **Status:** portfolio prototype built on synthetic data. It is not validated for real claims operations. See [Known limits](#known-limits).
 
 - **Live demo:** [apoorvab11.github.io/ClaimClarity](https://apoorvab11.github.io/ClaimClarity/) (no install or sign-in)
+- **Case study (one page):** [apoorvab11.github.io/ClaimClarity/case-study.html](https://apoorvab11.github.io/ClaimClarity/case-study.html) · also in [docs/CASE_STUDY.md](docs/CASE_STUDY.md)
 - **Business requirements:** [docs/BRD.md](docs/BRD.md) · **Functional requirements:** [docs/FRD.md](docs/FRD.md)
 - **Independent review and what I changed:** [docs/CHANGELOG.md](docs/CHANGELOG.md)
 

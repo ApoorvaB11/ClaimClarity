@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ClaimClarity Case Study</title>
+<meta name="description" content="One-page case study: ClaimClarity turns health-plan remittance files (EDI 835) into plain-English reasons and denial patterns. By Apoorva Bhardwaj.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f5f3ee; --surface:#ffffff; --ink:#1c2630; --ink-dim:#4f5a63; --line:#d6d1c4;
+  --navy:#1f3a4d; --teal:#2a6a6e; --warn:#a8611c; --focus:#1f5fbf;
+  --mono:'JetBrains Mono', ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#13181c; --surface:#1b2227; --ink:#e8e6df; --ink-dim:#a3adb4; --line:#2f383e;
+    --navy:#8cbfd8; --teal:#6dbab6; --warn:#e29a55; --focus:#8fb8ff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#13181c; --surface:#1b2227; --ink:#e8e6df; --ink-dim:#a3adb4; --line:#2f383e;
+  --navy:#8cbfd8; --teal:#6dbab6; --warn:#e29a55; --focus:#8fb8ff; color-scheme: dark;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif;font-size:16px;line-height:1.65;padding:32px 16px 48px;}
+a{color:var(--teal);text-underline-offset:3px;}
+a:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:3px;}
+.page{max-width:760px;margin:0 auto;}
+header{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:8px;}
+.kicker{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);font-weight:600;margin:0 0 8px;}
+h1{font-family:'IBM Plex Serif',Georgia,serif;font-weight:600;font-size:clamp(28px,5vw,38px);line-height:1.15;margin:0 0 10px;color:var(--navy);letter-spacing:-.01em;}
+.lede{font-size:18px;color:var(--ink-dim);margin:0 0 14px;max-width:62ch;}
+.byline{font-size:13.5px;color:var(--ink-dim);margin:0 0 18px;}
+.actions{display:flex;flex-wrap:wrap;gap:10px;}
+.btn{display:inline-block;text-decoration:none;font-size:14px;font-weight:500;border-radius:7px;padding:9px 16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);}
+.btn.primary{background:var(--navy);border-color:var(--navy);color:var(--surface);}
+.btn:hover{filter:brightness(1.05);}
+h2{font-family:'IBM Plex Serif',Georgia,serif;font-weight:600;font-size:21px;color:var(--navy);margin:34px 0 10px;}
+p{margin:0 0 12px;}
+ul,ol{margin:0 0 12px;padding-left:22px;}
+li{margin:0 0 7px;}
+code{font-family:var(--mono);font-size:.88em;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:1px 5px;}
+.callout{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:8px;padding:12px 16px;margin:14px 0;}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:16px 0 4px;}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+.stat b{display:block;font-family:var(--mono);font-size:22px;color:var(--navy);font-weight:600;line-height:1.2;}
+.stat span{font-size:12.5px;color:var(--ink-dim);}
+.shot{margin:18px 0 6px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);}
+.shot img{display:block;width:100%;height:auto;}
+.shot figcaption{font-size:12.5px;color:var(--ink-dim);padding:8px 12px;border-top:1px solid var(--line);}
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-dim);}
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <p class="kicker">Case study · Healthcare claims · Product management</p>
+    <h1>ClaimClarity</h1>
+    <p class="lede">Turning a health plan's remittance file into a plain-English picture of why claims were paid, adjusted or denied.</p>
+    <p class="byline">Apoorva Bhardwaj · October 2026</p>
+    <div class="actions">
+      <a class="btn primary" href="./">Open the live demo</a>
+      <a class="btn" href="https://github.com/ApoorvaB11/ClaimClarity">Code and docs on GitHub</a>
+      <a class="btn" href="https://github.com/ApoorvaB11/ClaimClarity/blob/main/docs/BRD.md">BRD</a>
+      <a class="btn" href="https://github.com/ApoorvaB11/ClaimClarity/blob/main/docs/FRD.md">FRD</a>
+    </div>
+  </header>
+
+  <h2>The problem</h2>
+  <p>When a health plan processes a claim, it sends the provider an electronic remittance file called an 835. It is full of numeric codes. A business reader sees <code>CAS*CO*197*2000</code> and cannot tell that it means "authorization missing". Billing and denial teams end up looking codes up one by one, and patterns such as "authorization denials are rising" stay hidden in thousands of lines.</p>
+
+  <h2>What I built</h2>
+  <p>ClaimClarity reads an 835 in the browser (nothing is uploaded), or uses 600 synthetic claims, and turns it into a picture a non-technical person can read in a minute:</p>
+  <ul>
+    <li>Plain-English reason beside the official X12 wording for each code</li>
+    <li>Claims grouped into five reason categories, plus an "Other / Unmapped" bucket so nothing is dropped</li>
+    <li>Claim count, billed and paid amounts, denial rate and a month-by-month trend</li>
+    <li>A searchable ledger with filters for status, category, payer and service date, and CSV export</li>
+    <li>A written summary of the pattern, with an optional rewrite by Claude that is checked for invented numbers and advice wording</li>
+  </ul>
+  <div class="callout"><b>Primary user:</b> a provider-side payment-posting or denial analyst, the person who actually receives the 835.</div>
+  <figure class="shot">
+    <img src="docs/screenshots/desktop.png" alt="ClaimClarity dashboard showing claim totals, denial rate, reason categories, a monthly denial-rate trend and the claim ledger" loading="lazy">
+    <figcaption>The dashboard on the 600-claim synthetic demo. <a href="./">Try it live</a>.</figcaption>
+  </figure>
+
+  <h2>My role and how it was built</h2>
+  <p>I owned the product: the problem, the scope, the requirements (BRD and FRD), the rules and the review. Claude wrote the code under my direction. I tested the result, commissioned an independent audit and decided what to fix.</p>
+
+  <h2>Product decisions I stand behind</h2>
+  <ul>
+    <li><b>Reporting and translation only.</b> The tool never decides, recommends or predicts anything about approval, denial or appeal. My experience is in payer data and reporting, not in deciding claims, so the tool stays inside that line.</li>
+    <li><b>Only verified codes are translated.</b> I checked the wording of all 14 translated codes against the official X12 code lists. Two of them (CARC 15 and 125) are now retired, so they are kept for older files and labelled "Retired code" with the stop date shown on x12.org. A wrong translation is worse than none, so everything else shows as "Other / Unmapped".</li>
+    <li><b>Synthetic data only.</b> No patient data, no real payers.</li>
+    <li><b>No 837 support, on purpose.</b> An 837 is a claim before any outcome exists, so there is nothing to translate. Pairing 837s with their 835s is a natural next step.</li>
+  </ul>
+
+  <h2>How I checked it</h2>
+  <div class="stats">
+    <div class="stat"><b>52</b><span>logic checks pass</span></div>
+    <div class="stat"><b>63</b><span>browser checks pass</span></div>
+    <div class="stat"><b>6 of 14</b><span>audit points confirmed and fixed</span></div>
+    <div class="stat"><b>9.3%</b><span>denial rate, matched by a separate recount</span></div>
+  </div>
+  <ul>
+    <li>An independent audit raised 14 points. I reproduced each against the code: six were real and fixed (for example, two remittances in one file used to share one payer and date), and the rest were wrong, already known or low priority.</li>
+    <li>Metrics such as denial rate, billed and paid totals were recomputed separately from the raw data and match.</li>
+    <li>After showing it to colleagues in healthcare, three suggestions shipped: a "What is an 835 file?" tip, a collapsible summary and a service-date filter.</li>
+  </ul>
+
+  <h2>Honest limits</h2>
+  <ul>
+    <li>The five categories and the rule that ignores routine adjustments (CO-45, PR-1, PR-2, PR-3) are my own choices, not an industry standard, and have had no domain review.</li>
+    <li>Only the first reason code of each claim is used for grouping.</li>
+    <li>Not yet done: testing with a real de-identified 835, a screen reader test and a contrast audit.</li>
+    <li>The value is reasoned for a hypothetical claims team and has not been validated with real users.</li>
+  </ul>
+
+  <h2>What I would do next</h2>
+  <ol>
+    <li>Test with two or three real de-identified 835 files.</li>
+    <li>Show every service line of a claim, not just the first.</li>
+    <li>Pair 837s with their 835s to show billed versus returned.</li>
+    <li>Interview two or three claims analysts and replace the reasoned targets with measured results.</li>
+  </ol>
+
+  <footer>
+    All demo data is synthetic: no real members, providers or payers. Reason and remark code wording is quoted from the X12 code lists.
+    · <a href="./">Live demo</a> · <a href="https://github.com/ApoorvaB11/ClaimClarity">GitHub</a>
+  </footer>
+</main>
+</body>
+</html>
