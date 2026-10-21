@@ -82,7 +82,7 @@ Success is judged on whether a reader can understand a claim and the overall pat
 **What has been checked:**
 
 - 52 automated logic checks pass: 835 reading, status and reason rules, grouping, monthly totals, CSV safety, and the guards on the Claude rewrite.
-- 61 browser checks pass: filters (including service date), 835 help tip, summary dropdown, keyboard use, file and paste loading, bad input, markup hidden in a file, and phone-width layout.
+- 63 browser checks pass: filters (including service date), 835 help tip, CSV download, summary dropdown, keyboard use, file and paste loading, bad input, markup hidden in a file, and phone-width layout.
 - Code wording was quoted from the official X12 code lists on 2026-10-12.
 - A dental-style synthetic 835 with many segment types loads without errors. An independent review on 17 October 2026 raised 14 points. Six were confirmed by running the code and fixed: service date priority, payments mixed together when a file holds two remittances, unsupported claim statuses, demo dates after today, an estimated "allowed" amount, and privacy wording about the optional Claude rewrite. Two code-group names were also made more accurate ("Authorization Issue" and "Coverage / Medical Necessity").
 

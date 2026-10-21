@@ -677,7 +677,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Tab' && $('drawer').classList.contains('open')){ e.preventDefault(); $('drawerClose').focus(); }
 });
 
-// Export: download through the viewer's confirmation when available; otherwise copy to clipboard.
+// Export: download through the viewer's confirmation on claude.ai; otherwise a normal browser download.
 let downloadsCap = null, sampleCap = null;
 $('btnExport').addEventListener('click', async ()=>{
   const list=filtered(), m=$('expMsg'); m.className='msg note';
@@ -687,8 +687,13 @@ $('btnExport').addEventListener('click', async ()=>{
     try{ await downloadsCap.save({filename:'claimclarity-ledger.csv', data:csv}); m.textContent=`Saved ${list.length} claims.`; }
     catch(e){ m.textContent = (e && e.code==='declined') ? 'Download cancelled.' : 'The download could not be completed.'; }
   } else {
-    try{ await navigator.clipboard.writeText(csv); m.textContent=`Copied ${list.length} claims as CSV to the clipboard.`; }
-    catch(e){ m.textContent='Download and copy are not available in this view.'; }
+    try{
+      const url = URL.createObjectURL(new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'}));
+      const a = document.createElement('a'); a.href = url; a.download = 'claimclarity-ledger.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 1000);
+      m.textContent=`Downloaded ${list.length} claim${list.length===1?'':'s'} as claimclarity-ledger.csv.`;
+    }catch(e){ m.textContent='The download could not be completed in this view.'; }
   }
 });
 
@@ -724,7 +729,6 @@ renderAll();
     downloadsCap = await window.claude.use('downloads');
     sampleCap = await window.claude.use('sample');
     $('btnClaude').hidden = !sampleCap;
-    $('btnExport').textContent = downloadsCap ? 'Download CSV' : 'Copy CSV';
-  } else { $('btnExport').textContent='Copy CSV'; } }catch(e){ $('btnExport').textContent='Copy CSV'; }
+  } }catch(e){}
 })();
 </script>

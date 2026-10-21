@@ -33,7 +33,13 @@ window.claude = { use: async (n) => {
     const monthLabels = await page.$$eval('#trendSvg text.axis-label', els => els.map(e => e.textContent));
     ok('A: trend shows Oct', monthLabels.includes('Oct 26') && monthLabels.includes('Jan 26'), monthLabels.join(','));
     ok('A: sr trend table has 10 rows', (await page.locator('#trendTable tbody tr').count()) === 10);
-    ok('A: export button says Copy CSV without runtime', (await page.locator('#btnExport').innerText()) === 'Copy CSV');
+    ok('A: export button says Download CSV without runtime', (await page.locator('#btnExport').innerText()) === 'Download CSV');
+    {
+      const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#btnExport')]);
+      const fs = require('fs'); const txt = fs.readFileSync(await dl.path(), 'utf8').replace(/^\uFEFF/, '');
+      ok('A: plain-browser export downloads claimclarity-ledger.csv', dl.suggestedFilename() === 'claimclarity-ledger.csv');
+      ok('A: plain-browser export has 600 rows plus header', txt.split('\n').length === 601);
+    }
     ok('A: Claude button hidden', await page.locator('#btnClaude').isHidden());
 
     await page.screenshot({ path: dir + 'docs/screenshots/desktop.png', fullPage: true });

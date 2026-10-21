@@ -44,7 +44,7 @@ The narrow scope is a product decision: my real experience is data and reporting
 ## Try it
 
 - **claude.ai:** open the shared link above. The Claude rewrite and CSV download run through the viewer's own Claude account and ask permission first.
-- **Locally:** open `app/index.html` in any browser. No install needed. (The Claude rewrite is hidden and the CSV button becomes "Copy CSV".)
+- **Locally:** open `app/index.html` in any browser. No install needed. (The Claude rewrite is hidden; "Download CSV" saves the file directly.)
 - **GitHub Pages:** in the repository settings, turn on Pages from the main branch root. `index.html` forwards to the app.
 
 ## How this was built
@@ -56,7 +56,7 @@ I led the product work: the problem, users, scope, requirements, the status and 
 | Check | Result |
 | --- | --- |
 | Logic tests (`tests/test_logic.js`) | 52 pass: 835 reading, status and reason rules, grouping, monthly totals, CSV safety, Claude-output guards |
-| Browser tests (`tests/test_browser.js`) | 61 pass: filters (including service date), 835 help tip, collapsible summary, keyboard use, file and paste loading, bad input, markup in a file, phone width |
+| Browser tests (`tests/test_browser.js`) | 63 pass: filters (including service date), 835 help tip, CSV download, collapsible summary, keyboard use, file and paste loading, bad input, markup in a file, phone width |
 | Independent recalculation | Billed, paid, denial rate, average days and status counts match a separate calculation from the raw data |
 | Independent review | An external review raised 14 points; 6 reproduced and were fixed. See the [change log](docs/CHANGELOG.md) |
 | Code wording | Quoted from the official X12 code lists on 2026-10-12 |

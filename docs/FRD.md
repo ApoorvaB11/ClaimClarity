@@ -67,7 +67,7 @@ This mapping is the author's own and has had no domain review. Completeness (eve
 - **Trend:** denial rate for every remittance month, with gaps for months with no claims, plus a screen-reader table.
 - **Ledger:** search (claim, member, payer, procedure), filters (status, category, payer, service date from/to), 12 rows per page. A date filter leaves out claims with no service date and says so; "from" later than "to" shows a warning. Tiles, summary, trend and CSV export all follow the date filter.
 - **Claim detail:** amounts, dates, both codes with the X12 wording and the plain-English line, and a note that the tool does not judge the claim. Opens by mouse, Enter or Space; Esc closes and returns focus to the row.
-- **Export:** CSV of the filtered ledger. Cells starting with = + - @ are neutralised. Falls back to "Copy CSV" when downloads are unavailable.
+- **Export:** CSV of the filtered ledger. Cells starting with = + - @ are neutralised. On claude.ai it downloads after the viewer confirms; anywhere else (GitHub Pages, a local file) it downloads `claimclarity-ledger.csv` directly.
 - **Scope statement:** shown on the page header and in the detail panel.
 
 ## 6. Summary and Claude rewrite (BR-10)
@@ -85,4 +85,4 @@ This mapping is the author's own and has had no domain review. Completeness (eve
 
 ## 8. Traceability
 
-Each requirement and its evidence is listed in section 7 of the BRD. Test files: `tests/test_logic.js` (52 checks), `tests/test_browser.js` (61 checks).
+Each requirement and its evidence is listed in section 7 of the BRD. Test files: `tests/test_logic.js` (52 checks), `tests/test_browser.js` (63 checks).
