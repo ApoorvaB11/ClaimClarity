@@ -91,7 +91,7 @@ Success is judged on whether a reader can understand a claim and the overall pat
 **Limits**
 
 - The five categories and the rule that ignores routine adjustments (CO-45, PR-1, PR-2, PR-3) are the author's own choices, not an industry standard.
-- Only 14 codes are translated. Anything else shows as "Other / Unmapped". Nine codes were removed because their official wording could not be fully confirmed.
+- Only 14 codes are translated. Anything else shows as "Other / Unmapped". Two of the 14 (CARC 15 and 125) are retired on x12.org; they are kept for older files and labelled "Retired code" with their stop date. Nine codes were removed because their official wording could not be fully confirmed.
 - When a claim has several service lines, only the first procedure code is shown.
 - For 835 files the "allowed" amount is only an estimate (paid plus patient share), and only the first reason code of each claim is used for grouping. Not yet done: a screen reader test, a colour contrast audit, and testing with several real de-identified 835 files.
 - The business case is reasoned for a hypothetical claims team and has not been validated with real users.
@@ -111,7 +111,7 @@ Built does not mean proven. This table separates what a test or an independent c
 
 | ID | Evidence | Verdict |
 | --- | --- | --- |
-| BR-01 | Tests check the plain-English and official wording show for coded claims, and unknown codes are handled. Wording was quoted from the X12 lists on 2026-10-12 | Confirmed for 14 codes |
+| BR-01 | Tests check the plain-English and official wording show for coded claims, and unknown codes are handled. Wording was quoted from the X12 lists on 2026-10-12 | Confirmed for 14 codes; 2 labelled retired |
 | BR-02 | Tests confirm every code in the demo maps to one category and unknown codes go to Other / Unmapped. Only the first reason code is used, so a claim with several reasons shows one. Whether that is a fair summary has had no domain review | Complete, validity not reviewed |
 | BR-03 | The summary text agrees with an independent count (494 paid, 50 partly paid, 56 denied). The chart itself is not separately tested | Confirmed for the figures |
 | BR-04 | Billed $163,420.63, paid $90,820.18, denial rate 9.3% and 23.3 average days match a separate recalculation from the raw data | Confirmed |

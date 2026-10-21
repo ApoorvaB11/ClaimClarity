@@ -64,7 +64,7 @@ I led the product work: the problem, users, scope, requirements, the status and 
 ## Known limits
 
 - The five categories and the rule that ignores routine adjustments (CO-45, PR-1, PR-2, PR-3) are my own choices, not an industry standard. They have had no domain review yet.
-- Only 14 codes are translated. Other codes show as "Other / Unmapped".
+- Only 14 codes are translated. Other codes show as "Other / Unmapped". CARC 15 and 125 are retired on x12.org; they are kept for older files and labelled "Retired code".
 - Only the first reason code on a claim is used for grouping, and only the first procedure code is shown when a claim has several service lines.
 - For 835 files, the "allowed" amount is an estimate (paid plus patient share), and the page says so.
 - Not yet done: testing with real de-identified 835 files, a screen reader test, a colour contrast audit, and testing with real claims analysts.

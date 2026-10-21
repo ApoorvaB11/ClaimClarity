@@ -1,5 +1,9 @@
 # Change log and review findings
 
+## 21 October 2026: retired codes labelled
+
+All codes used in the project were re-checked against the current X12 CARC and RARC lists. The wording of all 14 translated codes matches. Two are retired on x12.org: CARC 15 (stopped 01/05/2018) and CARC 125 (stopped 01/11/2013, used by 6 demo claims). Both are kept so older files still translate, and are now marked "Retired code" in the claim panel, with a note giving the stop date as shown on x12.org. The CSV export's plain-English column carries the same label.
+
 ## 20 October 2026: changes from showing the tool to others
 
 | Feedback | What changed |

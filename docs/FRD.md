@@ -43,7 +43,7 @@ The raw status code is kept on each record.
 
 ## 3. Code translation (BR-01)
 
-14 codes carry the official X12 wording and a plain-English line: CARC 4, 11, 15, 16, 18, 29, 49, 50, 125, 197, 198 and RARC M51, M86, MA63. Any other code is shown as "Other / Unmapped" with a note that it is outside the reference set.
+14 codes carry the official X12 wording and a plain-English line: CARC 4, 11, 15, 16, 18, 29, 49, 50, 125, 197, 198 and RARC M51, M86, MA63. Any other code is shown as "Other / Unmapped" with a note that it is outside the reference set. CARC 15 (stopped 01/05/2018) and CARC 125 (stopped 01/11/2013) are retired on x12.org. They are kept so older files still translate, and are marked "Retired code" in the claim panel and the CSV export, with a note giving the stop date as shown on x12.org.
 
 ## 4. Categories (BR-02)
 

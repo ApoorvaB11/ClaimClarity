@@ -3,13 +3,13 @@ const CODES = {
   carc: {
     "4":   {o:"The procedure code is inconsistent with the modifier used.", p:"The procedure code does not fit the modifier used."},
     "11":  {o:"The diagnosis is inconsistent with the procedure.", p:"The diagnosis on the claim does not fit the procedure billed."},
-    "15":  {o:"The authorization number is missing, invalid, or does not apply to the billed services or provider.", p:"The authorization number is missing, invalid, or does not match the billed service or provider."},
+    "15":  {retired:"01/05/2018", o:"The authorization number is missing, invalid, or does not apply to the billed services or provider.", p:"The authorization number is missing, invalid, or does not match the billed service or provider."},
     "16":  {o:"Claim/service lacks information or has submission/billing error(s).", p:"The claim is missing information or has a billing error."},
     "18":  {o:"Exact duplicate claim/service (Use only with Group Code OA except where state workers' compensation regulations requires CO)", p:"The payer already has this exact claim or service."},
     "29":  {o:"The time limit for filing has expired.", p:"The claim reached the payer after its filing deadline."},
     "49":  {o:"This is a non-covered service because it is a routine/preventive exam or a diagnostic/screening procedure done in conjunction with a routine/preventive exam.", p:"A routine or preventive exam, or a screening or diagnostic test done with one, is not covered."},
     "50":  {o:"These are non-covered services because this is not deemed a 'medical necessity' by the payer.", p:"The payer did not consider the service medically necessary."},
-    "125": {o:"Submission/billing error(s). At least one Remark Code must be provided", p:"A submission or billing error. The remark code gives the specifics."},
+    "125": {retired:"01/11/2013", o:"Submission/billing error(s). At least one Remark Code must be provided", p:"A submission or billing error. The remark code gives the specifics."},
     "197": {o:"Precertification/authorization/notification/pre-treatment absent.", p:"The required pre-approval was not on file."},
     "198": {o:"Precertification/notification/authorization/pre-treatment exceeded.", p:"The service went beyond what the pre-approval allowed."}
   },
@@ -159,7 +159,8 @@ function csvCell(v, isText){
 function describeCode(kind, code){
   if(!code) return {plain:'', official:''};
   const e = CODES[kind][code];
-  return e ? {plain:e.p, official:e.o} : {plain:NOT_IN_SET, official:''};
+  if(!e) return {plain:NOT_IN_SET, official:''};
+  return {plain: e.retired ? 'Retired code (stopped '+e.retired+' per x12.org). '+e.p : e.p, official:e.o};
 }
 function toCSV(list){
   const head = ['claim_id','member_id','payer','provider_specialty','place_of_service','service_date','remittance_date','cpt_code','service','billed','allowed','paid','patient_responsibility','status','category','carc','carc_plain_english','carc_x12_wording','rarc','rarc_plain_english','rarc_x12_wording'];

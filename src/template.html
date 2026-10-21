@@ -143,6 +143,8 @@ tbody tr:hover{background:var(--bg);}
 .code-plain{font-size:13px;line-height:1.5;font-weight:500;}
 .code-official{font-size:12px;line-height:1.5;color:var(--ink-dim);margin-top:4px;}
 .code-official b{font-weight:600;}
+.retired-pill{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--warn);border:1px solid var(--warn);border-radius:100px;padding:1px 7px;vertical-align:middle;}
+.retired-note{font-size:11.5px;line-height:1.5;color:var(--ink-dim);margin-top:6px;font-style:italic;}
 .cat-chip{display:inline-block;background:color-mix(in srgb,var(--teal) 16%,transparent);color:var(--teal);border-radius:100px;padding:3px 10px;font-size:11.5px;font-weight:600;margin-bottom:10px;}
 .out-of-scope{margin-top:14px;font-size:11.5px;color:var(--ink-dim);border-top:1px dashed var(--line);padding-top:10px;line-height:1.5;}
 footer.app{font-size:11.5px;color:var(--ink-dim);text-align:center;padding:14px 0 6px;line-height:1.6;}
@@ -280,13 +282,13 @@ const CODES = {
   carc: {
     "4":   {o:"The procedure code is inconsistent with the modifier used.", p:"The procedure code does not fit the modifier used."},
     "11":  {o:"The diagnosis is inconsistent with the procedure.", p:"The diagnosis on the claim does not fit the procedure billed."},
-    "15":  {o:"The authorization number is missing, invalid, or does not apply to the billed services or provider.", p:"The authorization number is missing, invalid, or does not match the billed service or provider."},
+    "15":  {retired:"01/05/2018", o:"The authorization number is missing, invalid, or does not apply to the billed services or provider.", p:"The authorization number is missing, invalid, or does not match the billed service or provider."},
     "16":  {o:"Claim/service lacks information or has submission/billing error(s).", p:"The claim is missing information or has a billing error."},
     "18":  {o:"Exact duplicate claim/service (Use only with Group Code OA except where state workers' compensation regulations requires CO)", p:"The payer already has this exact claim or service."},
     "29":  {o:"The time limit for filing has expired.", p:"The claim reached the payer after its filing deadline."},
     "49":  {o:"This is a non-covered service because it is a routine/preventive exam or a diagnostic/screening procedure done in conjunction with a routine/preventive exam.", p:"A routine or preventive exam, or a screening or diagnostic test done with one, is not covered."},
     "50":  {o:"These are non-covered services because this is not deemed a 'medical necessity' by the payer.", p:"The payer did not consider the service medically necessary."},
-    "125": {o:"Submission/billing error(s). At least one Remark Code must be provided", p:"A submission or billing error. The remark code gives the specifics."},
+    "125": {retired:"01/11/2013", o:"Submission/billing error(s). At least one Remark Code must be provided", p:"A submission or billing error. The remark code gives the specifics."},
     "197": {o:"Precertification/authorization/notification/pre-treatment absent.", p:"The required pre-approval was not on file."},
     "198": {o:"Precertification/notification/authorization/pre-treatment exceeded.", p:"The service went beyond what the pre-approval allowed."}
   },
@@ -436,7 +438,8 @@ function csvCell(v, isText){
 function describeCode(kind, code){
   if(!code) return {plain:'', official:''};
   const e = CODES[kind][code];
-  return e ? {plain:e.p, official:e.o} : {plain:NOT_IN_SET, official:''};
+  if(!e) return {plain:NOT_IN_SET, official:''};
+  return {plain: e.retired ? 'Retired code (stopped '+e.retired+' per x12.org). '+e.p : e.p, official:e.o};
 }
 function toCSV(list){
   const head = ['claim_id','member_id','payer','provider_specialty','place_of_service','service_date','remittance_date','cpt_code','service','billed','allowed','paid','patient_responsibility','status','category','carc','carc_plain_english','carc_x12_wording','rarc','rarc_plain_english','rarc_x12_wording'];
@@ -585,7 +588,9 @@ function renderTable(list){
 function codeBlock(kind, code){
   const e = CODES[kind][code], tag = kind.toUpperCase()+' '+code;
   if(!e) return `<div class="code-block"><span class="code-tag">${esc(tag)}</span><div class="code-plain">${NOT_IN_SET}.</div></div>`;
-  return `<div class="code-block"><span class="code-tag">${esc(tag)}</span><div class="code-plain">${esc(e.p)}</div><div class="code-official"><b>X12 wording:</b> ${esc(e.o)}</div></div>`;
+  const ret = e.retired ? `<span class="retired-pill">Retired code</span>` : '';
+  const note = e.retired ? `<div class="retired-note">As shown on x12.org, this code was stopped on ${esc(e.retired)}. Current remittances should not use it, but older or non-standard files may still contain it.</div>` : '';
+  return `<div class="code-block"><span class="code-tag">${esc(tag)}</span>${ret}<div class="code-plain">${esc(e.p)}</div><div class="code-official"><b>X12 wording:</b> ${esc(e.o)}</div>${note}</div>`;
 }
 function openDrawer(id, from){
   const c = DATA.find(x=>x.claim_id===id); if(!c) return;
